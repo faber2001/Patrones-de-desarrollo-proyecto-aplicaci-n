@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Task Manager – Patrones de Diseño</title>
+<style>
+  :root{--bg:#0f172a;--surface:#1e293b;--s2:#263044;--border:#334155;--blue:#3b82f6;--indigo:#6366f1;--green:#22c55e;--yellow:#eab308;--orange:#f97316;--red:#ef4444;--text:#e2e8f0;--muted:#94a3b8;--r:12px}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh}
+  header{background:linear-gradient(135deg,#1e3a8a,#4338ca);padding:16px 28px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 20px rgba(0,0,0,.5)}
+  .brand{display:flex;align-items:center;gap:12px}
+  .bi{width:42px;height:42px;background:rgba(255,255,255,.15);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px}
+  .brand h1{font-size:1.2rem;font-weight:800}
+  .brand p{font-size:.7rem;color:rgba(255,255,255,.65);margin-top:1px}
+  .spill{display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:20px;padding:6px 14px;font-size:.72rem;font-weight:600}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+  @keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(34,197,94,.4)}50%{opacity:.7;box-shadow:0 0 0 5px rgba(34,197,94,0)}}
+  .app{display:grid;grid-template-columns:290px 1fr;height:calc(100vh - 74px)}
+  aside{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+  .ptabs{display:flex;border-bottom:1px solid var(--border)}
+  .ptab{flex:1;padding:11px 4px;text-align:center;font-size:.65rem;font-weight:700;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:.2s;text-transform:uppercase;letter-spacing:.07em}
+  .ptab.on{color:var(--blue);border-bottom-color:var(--blue)}
+  .pinfo{padding:16px;flex:1;overflow-y:auto}
+  .pinfo h3{font-size:.82rem;font-weight:800;color:var(--blue);margin-bottom:6px}
+  .pinfo p{font-size:.72rem;color:var(--muted);line-height:1.65;margin-bottom:10px}
+  .snippet{background:#0d1117;border:1px solid var(--border);border-radius:8px;padding:11px 12px;font-family:'Courier New',monospace;font-size:.66rem;line-height:1.75;overflow-x:auto;color:#94a3b8}
+  .kw{color:#c084fc}.fn{color:#38bdf8}.str{color:#86efac}.cm{color:#475569}.obj{color:#fbbf24}
+  .logpanel{border-top:1px solid var(--border);display:flex;flex-direction:column;max-height:185px}
+  .ltitle{padding:8px 14px;font-size:.65rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+  .lbody{overflow-y:auto;flex:1;padding:8px 10px}
+  .le{font-family:monospace;font-size:.66rem;padding:3px 6px;border-radius:4px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .le.cr{color:#86efac}.le.cp{color:#34d399}.le.up{color:#93c5fd}.le.dl{color:#fca5a5}.le.ur{color:#fbbf24;background:rgba(251,191,36,.08)}
+  .content{display:flex;flex-direction:column;overflow:hidden}
+  .formbar{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 20px;display:flex;flex-direction:column;gap:10px}
+  .frow{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px}
+  label{display:block;font-size:.64rem;font-weight:700;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em}
+  input,select{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 11px;color:var(--text);font-size:.79rem;outline:none;transition:.2s;font-family:inherit}
+  input:focus,select:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(59,130,246,.15)}
+  .btnadd{background:linear-gradient(135deg,var(--blue),var(--indigo));border:none;border-radius:8px;padding:9px 22px;color:#fff;font-weight:800;font-size:.8rem;cursor:pointer;transition:.15s;white-space:nowrap;align-self:flex-end}
+  .btnadd:hover{opacity:.88;transform:translateY(-1px)}
+  .stats{display:flex;gap:10px;padding:12px 20px;background:var(--surface);border-bottom:1px solid var(--border);flex-wrap:wrap}
+  .stat{background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:8px 14px;display:flex;align-items:center;gap:9px;flex:1;min-width:90px}
+  .sv{font-size:1.5rem;font-weight:900;line-height:1}
+  .sl{font-size:.6rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+  .filters{display:flex;gap:7px;padding:10px 20px;background:var(--surface);border-bottom:1px solid var(--border);overflow-x:auto;flex-shrink:0}
+  .fbt{background:var(--s2);border:1px solid var(--border);border-radius:20px;padding:5px 13px;font-size:.7rem;font-weight:600;color:var(--muted);cursor:pointer;transition:.2s;white-space:nowrap;font-family:inherit}
+  .fbt.on{background:var(--blue);border-color:var(--blue);color:#fff}
+  .tasklist{flex:1;overflow-y:auto;padding:14px 20px}
+  .empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:220px;color:var(--muted);gap:10px;font-size:.85rem}
+  .empty span{font-size:3rem}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:13px 15px;margin-bottom:9px;display:flex;align-items:center;gap:13px;transition:.2s;animation:fi .22s ease}
+  @keyframes fi{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}
+  .card:hover{border-color:var(--blue);transform:translateX(3px)}
+  .card.done{opacity:.5}
+  .pb{width:4px;height:52px;border-radius:2px;flex-shrink:0}
+  .p-low{background:var(--green)}.p-medium{background:var(--yellow)}.p-high{background:var(--orange)}
+  .p-urgent{background:var(--red);animation:fl 1s infinite}
+  @keyframes fl{0%,100%{opacity:1}50%{opacity:.4}}
+  .cbody{flex:1;min-width:0}
+  .ct{font-weight:700;font-size:.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px}
+  .cd{font-size:.72rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cm2{display:flex;gap:5px;margin-top:6px;flex-wrap:wrap}
+  .badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:10px;font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+  .bc-personal{background:rgba(99,102,241,.18);color:#a5b4fc}
+  .bc-work{background:rgba(59,130,246,.18);color:#93c5fd}
+  .bc-project{background:rgba(234,179,8,.18);color:#fde047}
+  .bc-urgent{background:rgba(239,68,68,.18);color:#fca5a5}
+  .bs-pending{background:rgba(148,163,184,.12);color:var(--muted)}
+  .bs-in-progress{background:rgba(59,130,246,.14);color:#93c5fd}
+  .bs-completed{background:rgba(34,197,94,.14);color:#86efac}
+  .bs-cancelled{background:rgba(239,68,68,.1);color:#fca5a5}
+  .cact{display:flex;gap:5px;flex-shrink:0}
+  .ibtn{background:var(--s2);border:1px solid var(--border);border-radius:7px;width:30px;height:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:.15s;font-size:.82rem}
+  .ibtn:hover{border-color:var(--blue);background:rgba(59,130,246,.12)}
+  .ibtn.del:hover{border-color:var(--red);background:rgba(239,68,68,.12)}
+  .chip{display:inline-block;background:rgba(59,130,246,.15);color:#93c5fd;border-radius:6px;padding:2px 8px;font-size:.64rem;font-weight:700;margin-bottom:8px}
+  ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <div class="bi">📋</div>
+    <div><h1>Task Manager</h1><p>Patrones: Singleton · Observer · Factory Method</p></div>
+  </div>
+  <div class="spill"><div class="dot"></div>Singleton activo — 1 instancia global</div>
+</header>
+
+<div class="app">
+  <aside>
+    <div class="ptabs">
+      <div class="ptab on" onclick="showP('singleton',this)">Singleton</div>
+      <div class="ptab"    onclick="showP('observer',this)">Observer</div>
+      <div class="ptab"    onclick="showP('factory',this)">Factory</div>
+    </div>
+    <div class="pinfo" id="pinfo"></div>
+    <div class="logpanel">
+      <div class="ltitle"><span>🔔 Observer Log</span><span id="lcnt" style="color:var(--blue)">0 eventos</span></div>
+      <div class="lbody" id="lbody"></div>
+    </div>
+  </aside>
+
+  <div class="content">
+    <div class="formbar">
+      <div class="frow">
+        <div><label>Título</label><input id="ft" placeholder="Nombre de la tarea…"/></div>
+        <div><label>Descripción</label><input id="fd" placeholder="Detalles…"/></div>
+        <div><label>Categoría (Factory)</label>
+          <select id="fc"><option value="personal">Personal</option><option value="work">Work</option><option value="project">Project</option><option value="urgent">Urgent</option></select>
+        </div>
+        <div><label>Asignado a</label><input id="fa" placeholder="Responsable…"/></div>
+      </div>
+      <div style="display:flex;justify-content:flex-end"><button class="btnadd" onclick="doAdd()">＋ Agregar Tarea</button></div>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><span style="font-size:1.4rem">📋</span><div><div class="sv" id="s0">0</div><div class="sl">Total</div></div></div>
+      <div class="stat"><span style="font-size:1.4rem">⏳</span><div><div class="sv" id="s1" style="color:var(--muted)">0</div><div class="sl">Pendiente</div></div></div>
+      <div class="stat"><span style="font-size:1.4rem">🔄</span><div><div class="sv" id="s2" style="color:var(--blue)">0</div><div class="sl">En Progreso</div></div></div>
+      <div class="stat"><span style="font-size:1.4rem">✅</span><div><div class="sv" id="s3" style="color:var(--green)">0</div><div class="sl">Completadas</div></div></div>
+      <div class="stat"><span style="font-size:1.4rem">🚨</span><div><div class="sv" id="s4" style="color:var(--red)">0</div><div class="sl">Urgentes</div></div></div>
+    </div>
+
+    <div class="filters">
+      <button class="fbt on" onclick="setF('all',this)">Todas</button>
+      <button class="fbt" onclick="setF('pending',this)">Pendientes</button>
+      <button class="fbt" onclick="setF('in-progress',this)">En Progreso</button>
+      <button class="fbt" onclick="setF('completed',this)">Completadas</button>
+      <button class="fbt" onclick="setF('personal',this)">Personal</button>
+      <button class="fbt" onclick="setF('work',this)">Work</button>
+      <button class="fbt" onclick="setF('project',this)">Project</button>
+      <button class="fbt" onclick="setF('urgent',this)">Urgent</button>
+    </div>
+    <div class="tasklist" id="tlist"></div>
+  </div>
+</div>
+
+<script>
+// ══ SINGLETON ══════════════════════════════════════════
+class TaskManager {
+  constructor() {
+    if (TaskManager._i) return TaskManager._i;
+    this.tasks=[]; this.observers=[]; this._c=0;
+    TaskManager._i=this;
+  }
+  static getInstance(){ return TaskManager._i||new TaskManager(); }
+  subscribe(o){ this.observers.push(o); }
+  _notify(ev,t){ this.observers.forEach(o=>o.update(ev,t)); }
+  add(task){ this.tasks.push(task); this._notify('task-created',task); return task; }
+  upd(id,s){
+    const t=this.tasks.find(x=>x.id===id); if(!t)return;
+    t.status=s; this._notify(s==='completed'?'task-completed':'task-updated',t);
+  }
+  del(id){
+    const t=this.tasks.find(x=>x.id===id); if(!t)return;
+    this.tasks=this.tasks.filter(x=>x.id!==id); this._notify('task-deleted',t);
+  }
+}
+
+// ══ OBSERVER ═══════════════════════════════════════════
+class UILog {
+  update(ev,t){
+    const ts=new Date().toLocaleTimeString('es');
+    const b=document.getElementById('lbody');
+    const d=document.createElement('div');
+    const ic={'task-created':'➕','task-completed':'✅','task-updated':'🔄','task-deleted':'🗑️'};
+    const cl={'task-created':'cr','task-completed':'cp','task-updated':'up','task-deleted':'dl'};
+    d.className='le '+(cl[ev]||'up')+(t.priority==='urgent'?' ur':'');
+    d.textContent=`${ic[ev]||'📌'} [${ts}] ${ev.replace('task-','')} → "${t.title}"`;
+    b.insertBefore(d,b.firstChild);
+    const c=document.getElementById('lcnt');
+    c.textContent=(parseInt(c.textContent)||0)+1+' eventos';
+  }
+}
+class UrgAlert {
+  update(ev,t){
+    if(t.priority==='urgent'&&ev==='task-created'){
+      const b=document.getElementById('lbody');
+      const d=document.createElement('div');
+      d.className='le ur';
+      d.textContent=`⚠️ ALERTA: "${t.title}" — atención inmediata`;
+      b.insertBefore(d,b.firstChild);
+    }
+  }
+}
+
+// ══ FACTORY METHOD ═════════════════════════════════════
+let _c=0;
+class TaskFactory {
+  static create(cat,title,desc,who=null){
+    const id=`T-${++_c}`;
+    const r={personal:{priority:'low',status:'pending'},work:{priority:'medium',status:'pending'},project:{priority:'high',status:'pending'},urgent:{priority:'urgent',status:'in-progress'}};
+    return {id,title,description:desc,category:cat,assignedTo:who,createdAt:new Date(),...(r[cat]||r.work)};
+  }
+}
+
+// ══ BOOTSTRAP ══════════════════════════════════════════
+const mgr=TaskManager.getInstance();
+mgr.subscribe(new UILog());
+mgr.subscribe(new UrgAlert());
+
+[['work','Revisar informe Q3','Aprobar reporte trimestral','Ana García'],
+ ['urgent','Servidor caído en producción','Sin respuesta desde las 9am','Carlos Ruiz'],
+ ['project','Diseñar módulo de pagos','Integración con pasarela','María López'],
+ ['personal','Comprar suministros de oficina','Papel, bolígrafos, carpetas',null],
+].forEach(([c,t,d,a])=>mgr.add(TaskFactory.create(c,t,d,a)));
+mgr.upd('T-2','completed');
+
+let filt='all';
+render();
+
+function doAdd(){
+  const t=document.getElementById('ft').value.trim();
+  if(!t)return document.getElementById('ft').focus();
+  const d=document.getElementById('fd').value.trim()||'Sin descripción';
+  const c=document.getElementById('fc').value;
+  const a=document.getElementById('fa').value.trim()||null;
+  mgr.add(TaskFactory.create(c,t,d,a));
+  ['ft','fd','fa'].forEach(id=>document.getElementById(id).value='');
+  render();
+}
+document.addEventListener('keydown',e=>{if(e.key==='Enter')doAdd();});
+
+function setF(f,el){filt=f;document.querySelectorAll('.fbt').forEach(b=>b.classList.remove('on'));el.classList.add('on');render();}
+function doUpd(id,s){mgr.upd(id,s);render();}
+function doDel(id){mgr.del(id);render();}
+
+function render(){
+  const all=mgr.tasks;
+  const shown=all.filter(t=>filt==='all'||t.status===filt||t.category===filt);
+  document.getElementById('s0').textContent=all.length;
+  document.getElementById('s1').textContent=all.filter(t=>t.status==='pending').length;
+  document.getElementById('s2').textContent=all.filter(t=>t.status==='in-progress').length;
+  document.getElementById('s3').textContent=all.filter(t=>t.status==='completed').length;
+  document.getElementById('s4').textContent=all.filter(t=>t.category==='urgent').length;
+  const w=document.getElementById('tlist');
+  if(!shown.length){w.innerHTML='<div class="empty"><span>📭</span><p>No hay tareas en esta vista</p></div>';return;}
+  w.innerHTML=shown.map(t=>`
+    <div class="card${t.status==='completed'?' done':''}">
+      <div class="pb p-${t.priority}"></div>
+      <div class="cbody">
+        <div class="ct">${t.title}</div>
+        <div class="cd">${t.description}${t.assignedTo?' · '+t.assignedTo:''}</div>
+        <div class="cm2">
+          <span class="badge bc-${t.category}">${t.category}</span>
+          <span class="badge bs-${t.status}">${t.status}</span>
+          <span class="badge" style="background:rgba(148,163,184,.1);color:var(--muted)">${t.priority}</span>
+        </div>
+      </div>
+      <div class="cact">
+        ${t.status==='pending'?`<button class="ibtn" title="Iniciar" onclick="doUpd('${t.id}','in-progress')">🔄</button>`:''}
+        ${t.status!=='completed'?`<button class="ibtn" title="Completar" onclick="doUpd('${t.id}','completed')">✅</button>`:''}
+        <button class="ibtn del" title="Eliminar" onclick="doDel('${t.id}')">🗑️</button>
+      </div>
+    </div>`).join('');
+}
+
+// ══ PATTERN SIDEBAR ════════════════════════════════════
+const PS={
+  singleton:{chip:'Creacional',title:'Patrón Singleton',
+    body:`<p>Garantiza que <strong style="color:#e2e8f0">TaskManager</strong> tenga una única instancia en toda la app. El constructor verifica si ya existe; si es así, la retorna en vez de crear otra.</p><p>Esto asegura que toda la aplicación comparta el mismo listado de tareas.</p>`,
+    code:`<span class="kw">class</span> <span class="fn">TaskManager</span> {
+  <span class="fn">constructor</span>() {
+    <span class="kw">if</span> (TaskManager._i)
+      <span class="kw">return</span> TaskManager._i;
+    <span class="obj">this</span>.tasks = [];
+    TaskManager._i = <span class="kw">this</span>;
+  }
+}
+<span class="cm">// mgr1 === mgr2 → true ✓</span>`},
+  observer:{chip:'Comportamiento',title:'Patrón Observer',
+    body:`<p><strong style="color:#e2e8f0">TaskManager</strong> notifica a todos los observers cuando una tarea cambia. Cada observer reacciona sin que TaskManager sepa los detalles de cada uno.</p><p>Agregar un nuevo canal no requiere modificar TaskManager.</p>`,
+    code:`_notify(ev, task) {
+  <span class="obj">this</span>.observers
+    .forEach(o => o.<span class="fn">update</span>(ev, task));
+}
+<span class="cm">// Observers concretos:</span>
+<span class="kw">class</span> <span class="fn">UILog</span>    { <span class="fn">update</span>(ev,t){} }
+<span class="kw">class</span> <span class="fn">UrgAlert</span> { <span class="fn">update</span>(ev,t){} }`},
+  factory:{chip:'Creacional',title:'Patrón Factory Method',
+    body:`<p>Cada categoría tiene reglas de negocio predefinidas. <strong style="color:#e2e8f0">TaskFactory.create()</strong> selecciona el creador correcto y retorna un Task completamente configurado.</p><p>Tareas <em style="color:#fca5a5">urgent</em> obtienen prioridad máxima y estado <em>in-progress</em> automáticamente.</p>`,
+    code:`<span class="kw">const</span> rules = {
+  personal: { priority: <span class="str">'low'</span> },
+  work:     { priority: <span class="str">'medium'</span> },
+  project:  { priority: <span class="str">'high'</span> },
+  urgent:   { priority: <span class="str">'urgent'</span>,
+              status: <span class="str">'in-progress'</span> },
+};
+<span class="kw">return</span> { ...base, ...rules[cat] };`}
+};
+function showP(k,el){
+  document.querySelectorAll('.ptab').forEach(t=>t.classList.remove('on'));
+  el.classList.add('on');
+  const p=PS[k];
+  document.getElementById('pinfo').innerHTML=`<span class="chip">${p.chip}</span><h3>${p.title}</h3>${p.body}<div class="snippet">${p.code}</div>`;
+}
+showP('singleton',document.querySelector('.ptab'));
+</script>
+</body>
+</html>
